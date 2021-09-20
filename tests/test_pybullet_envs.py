@@ -6,7 +6,7 @@ from drlgrasp.pybullet_envs.kuka_reach_with_visual import KukaReachVisualEnv,Cus
 import numpy as np
 
 def test_kuka_reach_with_visual():
-    env=CustomSkipFrame(KukaReachVisualEnv(is_render=True,is_good_view=False))
+    env=CustomSkipFrame(KukaReachVisualEnv(is_render=True,is_good_view=True))
     init_state=env.reset()
     final_image_shape=env.kFinalImageSize
     assert init_state.shape==(1,4,final_image_shape['width'],final_image_shape['height'])

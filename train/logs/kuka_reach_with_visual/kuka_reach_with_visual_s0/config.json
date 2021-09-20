@@ -74,7 +74,7 @@
                         1.137684,
                         -0.006539
                     ],
-                    "is_good_view":	true,
+                    "is_good_view":	false,
                     "is_render":	true,
                     "joint_damping":	[
                         1e-05,
@@ -108,8 +108,8 @@
                     "num_joints":	7,
                     "object_id":	3,
                     "object_pos":	[
-                        0.36548755226382956,
-                        0.0527786858773166,
+                        0.6252819611309441,
+                        -0.0899930059311039,
                         0.00982638888888889
                     ],
                     "observation_space":	{
@@ -176,7 +176,7 @@
                         2.09,
                         3.05
                     ],
-                    "urdf_root_path":	"/home/lohse/anaconda3/lib/python3.7/site-packages/pybullet_data",
+                    "urdf_root_path":	"/home/hp-3070/anaconda3/envs/spinningup/lib/python3.6/site-packages/pybullet_data",
                     "view_matrix":	[
                         -4.077196891216772e-08,
                         -0.9396926164627075,
@@ -238,12 +238,12 @@
             "skip":	4
         }
     },
-    "epochs":	100,
+    "epochs":	2500,
     "exp_name":	"kuka_reach_with_visual",
     "gamma":	0.99,
     "lam":	0.97,
     "logger":	{
-        "<drlgrasp.ppo.logx.EpochLogger object at 0x7fc2bc193bd0>":	{
+        "<drlgrasp.ppo.logx.EpochLogger object at 0x7fdc832242b0>":	{
             "epoch_dict":	{},
             "exp_name":	"kuka_reach_with_visual",
             "first_row":	true,

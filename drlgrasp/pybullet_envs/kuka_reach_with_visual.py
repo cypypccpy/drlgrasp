@@ -210,6 +210,8 @@ class KukaReachVisualEnv(gym.Env):
         self.robot_pos_obs = p.getLinkState(self.kuka_id,
                                             self.num_joints - 1)[4]
 
+
+
         p.stepSimulation()
 
 
@@ -250,17 +252,18 @@ class KukaReachVisualEnv(gym.Env):
 
 
     def step(self, action):
-        self.current_vel = p.getBaseVelocity(self.kuka_id)
+        self.current_vel = p.getLinkState(self.kuka_id, self.num_joints - 1, 1)[6]
 
-        dx = self.current_vel[0][0] + 0.5 * action[0] / (240 * 240)
-        dy = self.current_vel[0][1] + 0.5 * action[1] / (240 * 240)
-        dz = self.current_vel[0][2] + 0.5 * action[2] / (240 * 240)
+        dx = (self.current_vel[0] / 24 + 0.5 * action[0] / (240 * 240)) * 1000
+        dy = (self.current_vel[1] / 24 + 0.5 * action[1] / (240 * 240)) * 1000
+        dz = (self.current_vel[2] / 24 + 0.5 * action[2] / (240 * 240)) * 1000
 
         self.current_pos = p.getLinkState(self.kuka_id, self.num_joints - 1)[4]
+
         # add threshold
         self.new_robot_pos = [
-            tanh(self.current_pos[0] + dx), tanh(self.current_pos[1] + dy),
-            tanh(self.current_pos[2] + dz)
+            self.current_pos[0] + dx, self.current_pos[1] + dy,
+            self.current_pos[2] + dz
         ]
 
         self.robot_joint_positions = p.calculateInverseKinematics(
@@ -407,7 +410,6 @@ if __name__ == '__main__':
     state = env.reset()
     for _ in range(20):
         action=env.action_space.sample()
-        print(action)
         env.step(action)
     #
     # state = env.reset()
