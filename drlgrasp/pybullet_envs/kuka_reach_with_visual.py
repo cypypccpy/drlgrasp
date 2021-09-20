@@ -5,7 +5,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
-from math import sqrt
+from math import sqrt, tanh
 import random
 import time
 import math
@@ -250,16 +250,19 @@ class KukaReachVisualEnv(gym.Env):
 
 
     def step(self, action):
-        dv = 0.005
-        dx = action[0] * dv
-        dy = action[1] * dv
-        dz = action[2] * dv
+        self.current_vel = p.getBaseVelocity(self.kuka_id)
+
+        dx = self.current_vel[0][0] + 0.5 * action[0] / (240 * 240)
+        dy = self.current_vel[0][1] + 0.5 * action[1] / (240 * 240)
+        dz = self.current_vel[0][2] + 0.5 * action[2] / (240 * 240)
 
         self.current_pos = p.getLinkState(self.kuka_id, self.num_joints - 1)[4]
+        # add threshold
         self.new_robot_pos = [
-            self.current_pos[0] + dx, self.current_pos[1] + dy,
-            self.current_pos[2] + dz
+            tanh(self.current_pos[0] + dx), tanh(self.current_pos[1] + dy),
+            tanh(self.current_pos[2] + dz)
         ]
+
         self.robot_joint_positions = p.calculateInverseKinematics(
             bodyUniqueId=self.kuka_id,
             endEffectorLinkIndex=self.num_joints - 1,

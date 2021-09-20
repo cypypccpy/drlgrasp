@@ -7,7 +7,7 @@ env = KukaReachVisualEnv(is_good_view=True, is_render=True)
 env = CustomSkipFrame(env)
 obs = env.reset()
 
-ac = torch.load("../saved_models/model.pt")
+ac = torch.load("/home/lohse/drlgrasp/train/logs/kuka_reach_with_visual/kuka_reach_with_visual_s0/pyt_save/model.pt")
 
 actions = ac.act(torch.as_tensor(obs, dtype=torch.float32))
 
