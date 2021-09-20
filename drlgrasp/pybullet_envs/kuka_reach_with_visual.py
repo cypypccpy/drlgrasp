@@ -1,6 +1,7 @@
 import pybullet as p
 import pybullet_data
 import gym
+
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
@@ -395,15 +396,16 @@ if __name__ == '__main__':
     # 这一部分是做baseline，即让机械臂随机选择动作，看看能够得到的分数
     import matplotlib.pyplot as plt
 
-    env = KukaReachVisualEnv(is_render=False)
+    env = KukaReachVisualEnv(is_render=True, is_good_view=True)
     env = CustomSkipFrame(env)
     print(env.observation_space.shape)
     print(env.action_space.shape)
-    print(env.action_space.n)
-    # for _ in range(20):
-    #     action=env.action_space.sample()
-    #     print(action)
-    #     env.step(action)
+    # print(env.action_space.n)
+    state = env.reset()
+    for _ in range(20):
+        action=env.action_space.sample()
+        print(action)
+        env.step(action)
     #
     # state = env.reset()
     # print(state.shape)
