@@ -14,6 +14,8 @@ import torch
 import os
 
 
+curriculum = 0
+
 def random_crop(imgs, out):
     """
         args:
@@ -137,7 +139,6 @@ class KukaReachVisualEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=1,
                                             shape=(1, self.kFinalImageSize['width'], self.kFinalImageSize['height']))
 
-
         self.seed()
         self.reset()
 
@@ -189,14 +190,27 @@ class KukaReachVisualEnv(gym.Env):
                                             "table/table.urdf"),
                                basePosition=[0.5, 0, -0.65])
         p.changeVisualShape(table_uid, -1, rgbaColor=[1, 1, 1, 1])
-        self.object_id = p.loadURDF(os.path.join(self.urdf_root_path,
-                                                 "random_urdfs/000/000.urdf"),
-                                    basePosition=[
-                                        random.uniform(self.x_low_obs,
-                                                       self.x_high_obs),
-                                        random.uniform(self.y_low_obs,
-                                                       self.y_high_obs), 0.01
-                                    ])
+
+        if curriculum == 0:
+            self.object_id = p.loadURDF(os.path.join(self.urdf_root_path,
+                                                     "random_urdfs/000/000.urdf"),
+                                        basePosition=[
+                                            random.uniform(self.x_low_obs,
+                                                           self.x_high_obs),
+                                            random.uniform(self.y_low_obs,
+                                                           self.y_high_obs), 0.01
+                                        ],
+                                        globalScaling=2)
+        else:
+            self.object_id = p.loadURDF(os.path.join(self.urdf_root_path,
+                                                     "random_urdfs/000/000.urdf"),
+                                        basePosition=[
+                                            random.uniform(self.x_low_obs,
+                                                           self.x_high_obs),
+                                            random.uniform(self.y_low_obs,
+                                                           self.y_high_obs), 0.01
+                                        ],
+                                        globalScaling=1)
 
         self.num_joints = p.getNumJoints(self.kuka_id)
 
@@ -254,9 +268,9 @@ class KukaReachVisualEnv(gym.Env):
     def step(self, action):
         self.current_vel = p.getLinkState(self.kuka_id, self.num_joints - 1, 1)[6]
 
-        dx = (self.current_vel[0] / 24 + 0.5 * action[0] / (240 * 240)) * 1000
-        dy = (self.current_vel[1] / 24 + 0.5 * action[1] / (240 * 240)) * 1000
-        dz = (self.current_vel[2] / 24 + 0.5 * action[2] / (240 * 240)) * 1000
+        dx = (self.current_vel[0] / 24 + 0.5 * action[0] / (240 * 240)) * 250
+        dy = (self.current_vel[1] / 24 + 0.5 * action[1] / (240 * 240)) * 250
+        dz = (self.current_vel[2] / 24 + 0.5 * action[2] / (240 * 240)) * 250
 
         self.current_pos = p.getLinkState(self.kuka_id, self.num_joints - 1)[4]
 
@@ -361,6 +375,8 @@ class KukaReachVisualEnv(gym.Env):
         # that return value is a dict rather than tuple.
         return force_sensor_value
 
+    def set_curriculum(self):
+        self.curriculum = curriculum
 
 class CustomSkipFrame(gym.Wrapper):
     """ Make a 4 frame skip, so the observation space will change to (4,84,84) from (1,84,84)
@@ -397,6 +413,9 @@ class CustomSkipFrame(gym.Wrapper):
                                 0)[None, :, :, :]
         return random_crop(states.astype(np.float32), self.kFinalImageSize['width'])
 
+    def set_curriculum(self, curriculum_):
+        global curriculum
+        curriculum = curriculum_
 
 if __name__ == '__main__':
     # 这一部分是做baseline，即让机械臂随机选择动作，看看能够得到的分数
@@ -407,10 +426,13 @@ if __name__ == '__main__':
     print(env.observation_space.shape)
     print(env.action_space.shape)
     # print(env.action_space.n)
-    state = env.reset()
-    for _ in range(20):
-        action=env.action_space.sample()
-        env.step(action)
+    for i in range(3):
+        if i == 1:
+            env.set_curriculum(1)
+        state = env.reset()
+        for _ in range(5):
+            action=env.action_space.sample()
+            env.step(action)
     #
     # state = env.reset()
     # print(state.shape)
