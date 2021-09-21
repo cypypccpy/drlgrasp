@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', '-s', type=int, default=0)
     parser.add_argument('--cpu', type=int, default=4)
     parser.add_argument('--epochs', type=int, default=2500)
-    parser.add_argument('--exp_name', type=str, default='kuka_reach_with_visual')
+    parser.add_argument('--exp_name', type=str, default='exp1')
     parser.add_argument('--log_dir', type=str, default="./logs")
     args = parser.parse_args()
 
