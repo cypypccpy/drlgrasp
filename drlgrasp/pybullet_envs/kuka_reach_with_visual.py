@@ -1,6 +1,7 @@
 import pybullet as p
 import pybullet_data
 import gym
+from curriculum_learning import curriculum_learning
 
 from gym import spaces
 from gym.utils import seeding
@@ -13,8 +14,6 @@ import cv2
 import torch
 import os
 
-
-curriculum = 0
 
 def random_crop(imgs, out):
     """
@@ -139,6 +138,10 @@ class KukaReachVisualEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=1,
                                             shape=(1, self.kFinalImageSize['width'], self.kFinalImageSize['height']))
 
+        # curriculem learning
+        self.epochs = 0
+        self.curriculum = curriculum_learning()
+
         self.seed()
         self.reset()
 
@@ -148,6 +151,7 @@ class KukaReachVisualEnv(gym.Env):
 
     def reset(self):
         self.step_counter = 0
+        self.curriculum.set_grasp_scale(epoch=self.epochs)
 
         p.resetSimulation()
         # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
@@ -191,26 +195,15 @@ class KukaReachVisualEnv(gym.Env):
                                basePosition=[0.5, 0, -0.65])
         p.changeVisualShape(table_uid, -1, rgbaColor=[1, 1, 1, 1])
 
-        if curriculum == 0:
-            self.object_id = p.loadURDF(os.path.join(self.urdf_root_path,
-                                                     "random_urdfs/000/000.urdf"),
-                                        basePosition=[
-                                            random.uniform(self.x_low_obs,
-                                                           self.x_high_obs),
-                                            random.uniform(self.y_low_obs,
-                                                           self.y_high_obs), 0.01
-                                        ],
-                                        globalScaling=2)
-        else:
-            self.object_id = p.loadURDF(os.path.join(self.urdf_root_path,
-                                                     "random_urdfs/000/000.urdf"),
-                                        basePosition=[
-                                            random.uniform(self.x_low_obs,
-                                                           self.x_high_obs),
-                                            random.uniform(self.y_low_obs,
-                                                           self.y_high_obs), 0.01
-                                        ],
-                                        globalScaling=1)
+        self.object_id = p.loadURDF(os.path.join(self.urdf_root_path,
+                                                    "random_urdfs/000/000.urdf"),
+                                    basePosition=[
+                                        random.uniform(self.x_low_obs,
+                                                        self.x_high_obs),
+                                        random.uniform(self.y_low_obs,
+                                                        self.y_high_obs), 0.01
+                                    ],
+                                    globalScaling=self.curriculum.get_model_scale())
 
         self.num_joints = p.getNumJoints(self.kuka_id)
 
@@ -247,6 +240,7 @@ class KukaReachVisualEnv(gym.Env):
         self.images = self.images[:, :, :
                                         3]  # the 4th channel is alpha channel, we do not need it.
 
+        self.epochs += 1
 
         return self._process_image(self.images)
 
@@ -341,7 +335,7 @@ class KukaReachVisualEnv(gym.Env):
             reward = -0.1
             self.terminated = True
 
-        elif self.distance < 0.1:
+        elif self.distance < 0.1 * self.curriculum.get_grasp_scale():
             reward = 1
             self.terminated = True
         else:
@@ -374,9 +368,6 @@ class KukaReachVisualEnv(gym.Env):
         # index it with str like dict. I think it can be improved
         # that return value is a dict rather than tuple.
         return force_sensor_value
-
-    def set_curriculum(self):
-        self.curriculum = curriculum
 
 class CustomSkipFrame(gym.Wrapper):
     """ Make a 4 frame skip, so the observation space will change to (4,84,84) from (1,84,84)
@@ -413,10 +404,6 @@ class CustomSkipFrame(gym.Wrapper):
                                 0)[None, :, :, :]
         return random_crop(states.astype(np.float32), self.kFinalImageSize['width'])
 
-    def set_curriculum(self, curriculum_):
-        global curriculum
-        curriculum = curriculum_
-
 if __name__ == '__main__':
     # 这一部分是做baseline，即让机械臂随机选择动作，看看能够得到的分数
     import matplotlib.pyplot as plt
@@ -427,8 +414,6 @@ if __name__ == '__main__':
     print(env.action_space.shape)
     # print(env.action_space.n)
     for i in range(3):
-        if i == 1:
-            env.set_curriculum(1)
         state = env.reset()
         for _ in range(5):
             action=env.action_space.sample()
