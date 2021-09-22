@@ -331,6 +331,7 @@ class EpochLogger(Logger):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.epoch_dict = dict()
+        self.last_dict = dict()
 
     def store(self, **kwargs):
         """
@@ -343,6 +344,7 @@ class EpochLogger(Logger):
             if not (k in self.epoch_dict.keys()):
                 self.epoch_dict[k] = []
             self.epoch_dict[k].append(v)
+
 
     def log_tabular(self, key, val=None, with_min_and_max=False, average_only=False):
         """
@@ -367,6 +369,9 @@ class EpochLogger(Logger):
             super().log_tabular(key, val)
         else:
             v = self.epoch_dict[key]
+            if len(v) == 0:
+                v = self.last_dict[key]
+
             vals = np.concatenate(v) if isinstance(v[0], np.ndarray) and len(v[0].shape) > 0 else v
             stats = mpi_statistics_scalar(vals, with_min_and_max=with_min_and_max)
             super().log_tabular(key if average_only else 'Average' + key, stats[0])
@@ -375,6 +380,8 @@ class EpochLogger(Logger):
             if with_min_and_max:
                 super().log_tabular('Max' + key, stats[3])
                 super().log_tabular('Min' + key, stats[2])
+            self.last_dict[key] = v
+
         self.epoch_dict[key] = []
 
     def get_stats(self, key):

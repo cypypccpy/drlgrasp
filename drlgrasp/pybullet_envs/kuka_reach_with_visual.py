@@ -1,7 +1,7 @@
 import pybullet as p
 import pybullet_data
 import gym
-from curriculum_learning import curriculum_learning
+from drlgrasp.pybullet_envs.curriculum_learning import curriculum_learning
 
 from gym import spaces
 from gym.utils import seeding
@@ -151,12 +151,14 @@ class KukaReachVisualEnv(gym.Env):
 
     def reset(self):
         self.step_counter = 0
+
         self.curriculum.set_grasp_scale(epoch=self.epochs)
+        print("epochs: %d" % self.epochs)
 
         p.resetSimulation()
         # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
         self.terminated = False
-        p.setGravity(0, 0, -10)
+        p.setGravity(0, 0, -9.8)
 
         # 这些是周围那些白线，用来观察是否超过了obs的边界
         p.addUserDebugLine(
@@ -332,7 +334,7 @@ class KukaReachVisualEnv(gym.Env):
 
         # 如果机械臂一直无所事事，在最大步数还不能接触到物体，也需要给一定的惩罚
         elif self.step_counter > self.kMaxEpisodeSteps:
-            reward = -0.1
+            reward = -0.1 * (1 - (1 - self.distance) / 1)
             self.terminated = True
 
         elif self.distance < 0.1 * self.curriculum.get_grasp_scale():
